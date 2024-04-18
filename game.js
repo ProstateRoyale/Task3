@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const readline = require('readline');
-require('console.table');
+const Table = require('cli-table');
 
 class KeyGenerator {
     static generateKey() {
@@ -69,7 +69,7 @@ class GameInterface {
                 const choice = parseInt(line, 10);
                 if (choice === 0) {
                     this.rl.close();
-                } else if (choice < 1 || choice > this.moves.length) {
+                } else if (choice < 1 || choice > this.moves.length || !choice) {
                     console.log('Invalid choice, try again.');
                     this.displayMenu();
                 } else {
@@ -86,25 +86,27 @@ class GameInterface {
     }
 }
 
-
 class HelpDisplay {
     static displayHelp(moves) {
-        let table = moves.map((move1, index1) => {
-            let row = { Move: move1 };
+        const table = new Table({
+            head: ['v PC move--User mov >', ...moves],
+            colWidth: new Array(moves.length + 1).fill(moves.length + 1)
+        });
+        moves.forEach((move1, index1) => {
+            const row = [move1];
             moves.forEach((move2, index2) => {
-                const winDistance = Math.floor(moves.length / 2);
                 if (index1 === index2) {
-                    row[move2] = "Draw";
-                } else if ((index1 > index2 && index1 - index2 <= winDistance) ||
-                           (index2 > index1 && index2 - index1 > winDistance)) {
-                    row[move2] = "Win";
+                    row.push('Draw');
+                } else if ((index1 > index2 && index1 - index2 <= Math.floor(moves.length / 2)) ||
+                           (index2 > index1 && index2 - index1 > Math.floor(moves.length / 2))) {
+                    row.push('Win');
                 } else {
-                    row[move2] = "Lose";
+                    row.push('Lose');
                 }
             });
-            return row;
+            table.push(row);
         });
-        console.table(table);
+        console.log(table.toString());
     }
 }
 
@@ -113,11 +115,16 @@ const unique = new Set(args);
 
 if (args.length < 3 || args.length % 2 === 0) {
     console.log(args.length % 2 === 0)
+    console.log(args.length % 2)
+    console.log(args.length / 2)
+    console.log(args.length)
     console.error('!!! odd number of unique moves >= 3 !!!.');
     process.exit(1);
 }
 
 if (unique.size !== args.length) {
+    console.log(args.length);
+    console.log(unique.size);
     console.error('!!! All moves must be unique. !!!');
     process.exit(1);
 }
