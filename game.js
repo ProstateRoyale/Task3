@@ -25,10 +25,13 @@ class GameLogic {
         const n = this.moves.length;
         const winDistance = Math.floor(n / 2);
 
-        if (playerIndex === computerIndex) {
+        if (playerMove === computerMove) {
             return 'Draw';
-        } else if ((playerIndex > computerIndex && playerIndex - computerIndex < winDistance) ||
-                   (playerIndex < computerIndex && computerIndex - playerIndex >= winDistance)) {
+        } else if (
+            (playerMove === 'Rock' && computerMove === 'Scissor') ||
+            (playerMove === 'Scissor' && computerMove === 'Paper') ||
+            (playerMove === 'Paper' && computerMove === 'Rock')
+        ) {
             return 'Player wins';
         } else {
             return 'Computer wins';
@@ -38,7 +41,7 @@ class GameLogic {
 
 class HelpDisplay {
     static showComputerMove(computerMove) {
-        console.log(`Help: Computer's move was ${computerMove}`);
+        console.log(`Computer's move was ${computerMove}`);
     }
 }
 
