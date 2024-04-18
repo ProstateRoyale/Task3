@@ -36,6 +36,15 @@ class GameLogic {
         } else {
             return 'Computer wins';
         }
+
+        // if (playerIndex === computerIndex) {
+        //     return 'Draw';
+        // } else if ((playerIndex > computerIndex && playerIndex - computerIndex <= winDistance) ||
+        //            (playerIndex < computerIndex && (computerIndex - playerIndex > winDistance))) {
+        //     return 'Player wins';
+        // } else {
+        //     return 'Computer wins';
+        // }
     }
 }
 
