@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const readline = require('readline');
-const process = require('process');
 
 class KeyGenerator {
     static generateKey() {
@@ -17,54 +16,36 @@ class KeyGenerator {
 class GameLogic {
     constructor(moves) {
         this.moves = moves;
+        this.n = moves.length;
+        this.winDistance = Math.floor(this.n / 2);
     }
 
-    whoWinner(playerMove, computerMove) {
+    determineWinner(playerMove, computerMove) {
         const playerIndex = this.moves.indexOf(playerMove);
         const computerIndex = this.moves.indexOf(computerMove);
-        const n = this.moves.length;
-        const winDistance = Math.floor(n / 2);
 
-        if (playerMove === computerMove) {
+        if (playerIndex === computerIndex) {
             return 'Draw';
-        } else if (
-            (playerMove === 'Rock' && computerMove === 'Scissor') ||
-            (playerMove === 'Scissor' && computerMove === 'Paper') ||
-            (playerMove === 'Paper' && computerMove === 'Rock')
-        ) {
+        } else if ((playerIndex > computerIndex && playerIndex - computerIndex <= this.winDistance) ||
+                   (computerIndex > playerIndex && computerIndex - playerIndex > this.winDistance)) {
             return 'Player wins';
         } else {
             return 'Computer wins';
         }
-
-        // if (playerIndex === computerIndex) {
-        //     return 'Draw';
-        // } else if ((playerIndex > computerIndex && playerIndex - computerIndex <= winDistance) ||
-        //            (playerIndex < computerIndex && (computerIndex - playerIndex > winDistance))) {
-        //     return 'Player wins';
-        // } else {
-        //     return 'Computer wins';
-        // }
-    }
-}
-
-class HelpDisplay {
-    static showComputerMove(computerMove) {
-        console.log(`Computer's move was ${computerMove}`);
     }
 }
 
 class GameInterface {
     constructor(moves) {
+        this.moves = moves;
+        this.logic = new GameLogic(moves);
+        this.key = KeyGenerator.generateKey();
+        this.computerMove = moves[Math.floor(Math.random() * moves.length)];
+        this.hmac = KeyGenerator.generateHMAC(this.key, this.computerMove);
         this.rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
         });
-        this.moves = moves;
-        this.logic = new GameLogic(moves);
-        this.key = KeyGenerator.generateKey();
-        this.computerMove = this.moves[Math.floor(Math.random() * this.moves.length)];
-        this.hmac = KeyGenerator.generateHMAC(this.key, this.computerMove);
     }
 
     displayMenu() {
@@ -73,41 +54,56 @@ class GameInterface {
             console.log(`${index + 1} - ${move}`);
         });
         console.log(`0 - Exit`);
-        console.log(`Type 'help' to reveal the computer's move`);
+        console.log(`? - Help`);
         console.log(`Enter your choice:`);
     }
 
     start() {
         this.displayMenu();
         this.rl.on('line', (line) => {
-            if (line.trim() === 'help') {
-                HelpDisplay.showComputerMove(this.computerMove);
-                this.displayMenu();
-                return;
-            }
-            const choice = parseInt(line, 10);
-            if (choice === 0) {
-                this.rl.close();
-                return;
-            } else if (choice < 1 || choice > this.moves.length) {
+            if (line === '?') {
+                HelpDisplay.displayHelp(this.moves);
                 this.displayMenu();
             } else {
-                const playerMove = this.moves[choice - 1];
-                const result = this.logic.whoWinner(playerMove, this.computerMove);
-                console.log(`You chose: ${playerMove}`);
-                console.log(`Computer chose: ${this.computerMove}`);
-                console.log(result);
-                console.log(`Key: ${this.key.toString('hex')}`);
-                this.rl.close();
+                const choice = parseInt(line, 10);
+                if (choice === 0) {
+                    this.rl.close();
+                } else if (choice < 1 || choice > this.moves.length) {
+                    console.log('Invalid choice, try again.');
+                    this.displayMenu();
+                } else {
+                    const playerMove = this.moves[choice - 1];
+                    const result = this.logic.determineWinner(playerMove, this.computerMove);
+                    console.log(`Your move: ${playerMove}`);
+                    console.log(`Computer move: ${this.computerMove}`);
+                    console.log(result);
+                    console.log(`HMAC key: ${this.key.toString('hex')}`);
+                    this.rl.close();
+                }
             }
         });
     }
 }
 
-const args = process.argv.slice(2);
+class HelpDisplay {
+    static displayHelp(moves) {
+        const winDistance = Math.floor(moves.length / 2);
+        console.log("Help table (Win/Lose/Draw):");
+        moves.forEach((move1, index1) => {
+            let results = moves.map((move2, index2) => {
+                if (index1 === index2) return "Draw";
+                else if ((index1 > index2 && index1 - index2 <= winDistance) ||
+                         (index2 > index1 && index2 - index1 > winDistance)) return "Win ";
+                else return "Lose";
+            });
+            console.log(`${move1}: ${results.join(' | ')}`);
+        });
+    }
+}
 
+const args = process.argv.slice(2);
 if (args.length < 3 || args.length % 2 === 0) {
-    console.error('!!! odd number of moves >= 3 is required !!!');
+    console.error('Error: An odd number of unique moves >= 3 is required.');
     process.exit(1);
 }
 
