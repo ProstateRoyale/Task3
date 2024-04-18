@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const readline = require('readline');
+require('console.table');
 
 class KeyGenerator {
     static generateKey() {
@@ -85,27 +86,41 @@ class GameInterface {
     }
 }
 
+
 class HelpDisplay {
     static displayHelp(moves) {
-        const winDistance = Math.floor(moves.length / 2);
-        console.log("Help table (Win/Lose/Draw):");
-        moves.forEach((move1, index1) => {
-            let results = moves.map((move2, index2) => {
-                if (index1 === index2) return "Draw";
-                else if ((index1 > index2 && index1 - index2 <= winDistance) ||
-                         (index2 > index1 && index2 - index1 > winDistance)) return "Win ";
-                else return "Lose";
+        let table = moves.map((move1, index1) => {
+            let row = { Move: move1 };
+            moves.forEach((move2, index2) => {
+                const winDistance = Math.floor(moves.length / 2);
+                if (index1 === index2) {
+                    row[move2] = "Draw";
+                } else if ((index1 > index2 && index1 - index2 <= winDistance) ||
+                           (index2 > index1 && index2 - index1 > winDistance)) {
+                    row[move2] = "Win";
+                } else {
+                    row[move2] = "Lose";
+                }
             });
-            console.log(`${move1}: ${results.join(' | ')}`);
+            return row;
         });
+        console.table(table);
     }
 }
 
 const args = process.argv.slice(2);
+const unique = new Set(args);
+
 if (args.length < 3 || args.length % 2 === 0) {
-    console.error('Error: An odd number of unique moves >= 3 is required.');
+    console.log(args.length % 2 === 0)
+    console.error('!!! odd number of unique moves >= 3 !!!.');
     process.exit(1);
 }
 
-const game = new GameInterface(args);
+if (unique.size !== args.length) {
+    console.error('!!! All moves must be unique. !!!');
+    process.exit(1);
+}
+
+const game = new GameInterface([...unique]);
 game.start();
